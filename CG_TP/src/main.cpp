@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "trackball.h"
 #include "obstacle.h"
+#include "square.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -51,10 +52,11 @@ int		rotating_type = 0;
 
 //*************************************
 // holder of vertices and indices of a unit circle
-std::vector<vertex>	unit_sphere_vertices, unit_cube_vertices;	// host-side vertices
-std::vector<uint> unit_sphere_indices, unit_cube_indices;
+std::vector<vertex>	unit_sphere_vertices, unit_cube_vertices, unit_square_vertices;	// host-side vertices
+std::vector<uint> unit_sphere_indices, unit_cube_indices, unit_square_indices;
 auto	spheres = std::move(create_sphere());
 auto	cubes = std::move(create_cube());
+auto	squares = std::move(create_squares());
 auto	obstacles = std::list<obstacle_t>();
 //*************************************
 void update()
@@ -431,6 +433,8 @@ bool user_init()
 	unit_sphere_indices= create_sphere_indices( unit_sphere_vertices, vertex_array);
 	unit_cube_vertices = std::move(create_cube_vertices());
 	unit_cube_indices = create_cube_indices(unit_cube_vertices, vertex_array);
+	unit_square_vertices = std::move(create_square_vertices());
+	unit_square_indices = create_sphere_indices(unit_square_vertices, vertex_array);
 	//printf("%d\n", texID);
 	texID = create_texture(image_path, true);
 	//printf("%d\n", texID);
