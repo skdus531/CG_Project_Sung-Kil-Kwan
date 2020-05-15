@@ -2,9 +2,9 @@
 
 struct square_t
 {
-	vec2	center = vec2(0);		// 2D position for translation
-	float	width = 1.0f;		// radius
-	float	height = 1.0f;
+	vec3	center = vec3(0);		// 2D position for translation
+	float	width = 20.0f;		// radius
+	float	height = 3.0f;
 	float	theta = 0.0f;			// rotation angle
 	vec4	color;				// RGBA color in [0,1]
 	mat4	model_matrix;		// modeling transformation
@@ -18,7 +18,13 @@ inline std::vector<square_t> create_squares()
 	std::vector<square_t> squares;
 	square_t c;
 
-	c = { vec2(-0.5f,0),1.0f,1.0f,0.0f,vec4(1.0f,0.5f,0.5f,1.0f) };
+	c = { vec3(0,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	squares.emplace_back(c);
+	c = { vec3(-0.55f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	squares.emplace_back(c);
+	c = { vec3(-1.1f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	squares.emplace_back(c);
+	c = { vec3(-1.65f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
 	squares.emplace_back(c);
 	return squares;
 }
@@ -32,9 +38,9 @@ inline void square_t::update(float t)
 	// these transformations will be explained in later transformation lecture
 	mat4 scale_matrix =
 	{
-		width, 0, 0, 0,
-		0, height, 0, 0,
-		0, 0, 1, 0,
+		1, 0, 0, 0,
+		0, width,0, 0,
+		0, 0,  height, 0,
 		0, 0, 0, 1
 	};
 
@@ -54,7 +60,7 @@ inline void square_t::update(float t)
 	{
 		1, 0, 0, center.x,
 		0, 1, 0, center.y,
-		0, 0, 1, 0,
+		0, 0, 1, center.z,
 		0, 0, 0, 1
 	};
 
@@ -65,12 +71,12 @@ inline std::vector<vertex> create_square_vertices()
 {
 	std::vector<vertex> v; 
 	float positions[] = {
-	-0.5f,  0.5f, 0.0f, //vertex 1 : Top-left
-	0.5f, 0.5f, 0.0f, //vertex 2 : Top-right
-	0.5f, -0.5f, 0.0f, //vertex 3 : Bottom-right
-	0.5f, -0.5f, 0.0f, //vertex 4 : Bottom-right
-	-0.5f, -0.5f, 0.0f, //vertex 5 : Bottom-left
-	-0.5f,  0.5f, 0.0f //vertex 6 : Top-left
+	-0.2f,  1.0f, 0.0f, //vertex 1 : Top-left
+	0.2f, 1.0f, 0.0f, //vertex 2 : Top-right
+	0.2f, -1.0f, 0.0f, //vertex 3 : Bottom-right
+	0.2f, -1.0f, 0.0f, //vertex 4 : Bottom-right
+	-0.2f, -1.0f, 0.0f, //vertex 5 : Bottom-left
+	-0.2f,  1.0f, 0.0f //vertex 6 : Top-left
 	};
 	for (uint i = 0; i < 6; i++) {
 		vec3 _pos = vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
@@ -102,6 +108,7 @@ inline std::vector<uint> create_square_indices(const std::vector<vertex>& vertic
 	for (size_t i = 0; i < sizeof(square_elements) / sizeof(GLuint); i++) {
 		indices.push_back(square_elements[i]);
 	}
+
 	// generation of vertex buffer: use vertices as it is
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
