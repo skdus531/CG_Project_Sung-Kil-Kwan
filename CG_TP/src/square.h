@@ -3,8 +3,8 @@
 struct square_t
 {
 	vec3	center = vec3(0);		// 2D position for translation
-	float	width = 20.0f;		// radius
-	float	height = 3.0f;
+	float	width = 5.0f;		// radius
+	float	height = 1.0f;
 	float	theta = 0.0f;			// rotation angle
 	vec4	color;				// RGBA color in [0,1]
 	mat4	model_matrix;		// modeling transformation
@@ -18,13 +18,13 @@ inline std::vector<square_t> create_squares()
 	std::vector<square_t> squares;
 	square_t c;
 
-	c = { vec3(0,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	c = { vec3(0,0,0.0f),5.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
 	squares.emplace_back(c);
-	c = { vec3(-0.55f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	c = { vec3(-3.0f,0,0.0f),5.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
 	squares.emplace_back(c);
-	c = { vec3(-1.1f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	c = { vec3(-6.0f,0,0.0f),5.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
 	squares.emplace_back(c);
-	c = { vec3(-1.65f,0,30.0f),1.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
+	c = { vec3(-9.0f,0,0.0f),5.0f,1.0f,0.0f,vec4(0.0f,0.5f,0.5f,1.0f) };
 	squares.emplace_back(c);
 	return squares;
 }
@@ -71,12 +71,12 @@ inline std::vector<vertex> create_square_vertices()
 {
 	std::vector<vertex> v; 
 	float positions[] = {
-	-0.2f,  1.0f, 0.0f, //vertex 1 : Top-left
-	0.2f, 1.0f, 0.0f, //vertex 2 : Top-right
-	0.2f, -1.0f, 0.0f, //vertex 3 : Bottom-right
-	0.2f, -1.0f, 0.0f, //vertex 4 : Bottom-right
-	-0.2f, -1.0f, 0.0f, //vertex 5 : Bottom-left
-	-0.2f,  1.0f, 0.0f //vertex 6 : Top-left
+	-1.0f,  1.0f, 0.0f, //vertex 1 : Top-left
+	1.0f, 1.0f, 0.0f, //vertex 2 : Top-right
+	1.0f, -1.0f, 0.0f, //vertex 3 : Bottom-right
+	1.0f, -1.0f, 0.0f, //vertex 4 : Bottom-right
+	-1.0f, -1.0f, 0.0f, //vertex 5 : Bottom-left
+	-1.0f,  1.0f, 0.0f //vertex 6 : Top-left
 	};
 	for (uint i = 0; i < 6; i++) {
 		vec3 _pos = vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
@@ -121,7 +121,7 @@ inline std::vector<uint> create_square_indices(const std::vector<vertex>& vertic
 
 
 	// generate vertex array object, which is mandatory for OpenGL 3.3 and higher
-	if (vertex_array) glDeleteVertexArrays(1, &vertex_array);
+	//if (vertex_array) glDeleteVertexArrays(1, &vertex_array);
 	vertex_array = cg_create_vertex_array(vertex_buffer, index_buffer);
 	if (!vertex_array) { printf("%s(): failed to create vertex aray\n", __func__); }
 	return indices;
