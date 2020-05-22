@@ -66,7 +66,7 @@ void update()
 
 	// update global simulation parameter
 	//
-	t = float(glfwGetTime())*0.4f;
+	if(game_start) t = float(glfwGetTime())*0.4f;
 	// tricky aspect correction matrix for non-square window
 	float aspect = window_size.x/float(window_size.y);
 	mat4 aspect_matrix = 
