@@ -49,7 +49,7 @@ bool	b_rotating = true;
 float	restart_time = 0.0f;
 float	actual_moved_time = 0.0f;
 int		rotating_type = 0;
-
+bool	game_start;
 //*************************************
 // holder of vertices and indices of a unit circle
 std::vector<vertex>	unit_sphere_vertices, unit_cube_vertices, unit_square_vertices;	// host-side vertices
@@ -111,24 +111,33 @@ void render_obj(T& obj, std::vector<uint>& indices, GLuint VAOid) {
 
 		uloc = glGetUniformLocation(program, "tex");		
 		if (uloc > -1) glUniform1i(uloc, 0);	// pointer version
-
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 	}
 }
 
 void render()
 {
-	// clear screen (with background color) and clear depth buffer
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	if (!game_start) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(program);
+		render_obj(squares, unit_square_indices, 2);
 
-	// notify GL that we use our own program
-	glUseProgram( program );
-	//printf("%f\n", t);
-	render_obj(spheres, unit_sphere_indices, 1);
-	render_obj(cubes, unit_cube_indices, 2);
-	render_obj(obstacles, unit_cube_indices, 2);
-	// swap front and back buffers, and display to screen
-	glfwSwapBuffers( window );
+		glfwSwapBuffers(window);
+	}
+	if (game_start) {
+		// clear screen (with background color) and clear depth buffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// notify GL that we use our own program
+		glUseProgram(program);
+		//printf("%f\n", t);
+		render_obj(spheres, unit_sphere_indices, 1);
+		render_obj(cubes, unit_cube_indices, 2);
+		render_obj(obstacles, unit_cube_indices, 2);
+		
+		// swap front and back buffers, and display to screen
+		glfwSwapBuffers(window);
+	}
 }
 
 void reshape( GLFWwindow* window, int width, int height )
@@ -145,8 +154,6 @@ void print_help()
 	printf( "- press ESC or 'q' to terminate the program\n" );
 	printf( "- press F1 or 'h' to see help\n" );
 	printf( "- press 'd' to toggle between texture coordinates\n" );
-	//printf( "- press '+/-' to increase/decrease tessellation factor (min=%d, max=%d)\n", MIN_TESS, MAX_TESS );
-	//printf( "- press 'i' to toggle between index buffering and simple vertex buffering\n" );
 	printf( "- press 'w' to toggle wireframe\n" );
 	printf("- press LEFT_MOUSE_BUTTON to rotate the camera\n");
 	printf("- press RIGHT_MOUSE_BUTTON or SHIFT+LEFT_MOUSE_BUTTON to zoom the camera\n");
@@ -161,10 +168,6 @@ void print_help()
 	
 	printf( "\n" );
 }
-
-
-
-
 void update_tess()
 {
 	if (b.add) {
@@ -191,10 +194,10 @@ void update_pos() {
 	if (d.up) add.z = 0.05f;
 	else if (d.down) add.z = -0.05f;
 	else if (d.right) {
-		if(spheres[1].position.y<20.0f) spheres[1].position.y += 0.5f;
+		if(spheres[1].position.y<20.0f) spheres[1].position.y += 0.1f;
 	}
 	else if (d.left) {
-		if(spheres[1].position.y>-20.0f) spheres[1].position.y -= 0.5f;
+		if(spheres[1].position.y>-20.0f) spheres[1].position.y -= 0.1f;
 	}
 	
 	
@@ -346,7 +349,6 @@ void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods )
 		}*/
 	}
 }
-
 void mouse( GLFWwindow* window, int button, int action, int mods )
 {
 	dvec2 pos; glfwGetCursorPos(window, &pos.x, &pos.y);
@@ -355,11 +357,23 @@ void mouse( GLFWwindow* window, int button, int action, int mods )
 	vec2 npos = cursor_to_ndc(pos, window_size);
 	if (action == GLFW_PRESS) {
 		tb.begin(cam.view_matrix, npos);
-		if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) printf("> rotating camera\n");
+		if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) {
+			if (pos.y > 330 && pos.y < 390 && pos.x>490 && pos.x < 790) {
+				if (!game_start) {
+					cam.update();
+					game_start = true;
+				}
+				else printf("> rotating camera\n");
+
+				cam.view_matrix = mat4::look_at(cam.eye, cam.at, cam.up);
+
+			}
+		}
 		else if (tb.button == GLFW_MOUSE_BUTTON_MIDDLE ||
 			(tb.button == GLFW_MOUSE_BUTTON_LEFT && (tb.mods & GLFW_MOD_CONTROL))) printf("> panning camera\n");
 		else if (tb.button == GLFW_MOUSE_BUTTON_RIGHT ||
 			(tb.button == GLFW_MOUSE_BUTTON_LEFT && (tb.mods & GLFW_MOD_SHIFT))) printf("> zooming camera\n");
+		
 	}
 	else if (action == GLFW_RELEASE) {
 		tb.end();
@@ -367,13 +381,21 @@ void mouse( GLFWwindow* window, int button, int action, int mods )
 	}
 	
 }
-
 void motion( GLFWwindow* window, double x, double y )
 {
 	if (!tb.is_tracking()) return;
 	vec2 npos = cursor_to_ndc(dvec2(x, y), window_size);
 	if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) {
-		cam.view_matrix = tb.update(npos);
+		//printf("<<view_matrix>>\n");
+		//for (int i = 0; i < 4; i++) {
+		//	for (int j = 0; j < 4; j++) {
+		//		printf("%f ", cam.view_matrix[4 * i + j]);
+		//	}
+		//	puts("");
+		//}
+		
+
+		if(game_start) cam.view_matrix = tb.update(npos);
 	}
 	else if (tb.button == GLFW_MOUSE_BUTTON_MIDDLE ||
 		(tb.button == GLFW_MOUSE_BUTTON_LEFT && (tb.mods & GLFW_MOD_CONTROL)) ) {
@@ -386,8 +408,6 @@ void motion( GLFWwindow* window, double x, double y )
 	
 
 }
-
-
 GLuint create_texture(const char* image_path, bool b_mipmap)
 {
 	// load the image with vertical flipping
@@ -434,7 +454,7 @@ bool user_init()
 	unit_cube_vertices = std::move(create_cube_vertices());
 	unit_cube_indices = create_cube_indices(unit_cube_vertices, vertex_array);
 	unit_square_vertices = std::move(create_square_vertices());
-	unit_square_indices = create_sphere_indices(unit_square_vertices, vertex_array);
+	unit_square_indices = create_square_indices(unit_square_vertices, vertex_array);
 	//printf("%d\n", texID);
 	texID = create_texture(image_path, true);
 	//printf("%d\n", texID);
