@@ -6,8 +6,14 @@
 #include "trackball.h"
 #include "obstacle.h"
 #include "square.h"
+#include "button.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+//*******************************************************************
+// forward declarations for freetype text
+bool init_text();
+void render_text(std::string text, GLint x, GLint y, GLfloat scale, vec4 color, GLfloat dpi_scale = 1.0f);
 
 //*************************************
 // global constants
@@ -26,6 +32,7 @@ trackball tb;
 // window objects
 GLFWwindow*	window = nullptr;
 ivec2		window_size = ivec2(1280, 720); // initial window size
+
 
 //*************************************
 // OpenGL objects
@@ -49,7 +56,7 @@ bool	b_rotating = true;
 float	restart_time = 0.0f;
 float	actual_moved_time = 0.0f;
 int		rotating_type = 0;
-bool	game_start;
+bool	game_start, how_to, option, title = true, game_over, game_clear;
 //*************************************
 // holder of vertices and indices of a unit circle
 std::vector<vertex>	unit_sphere_vertices, unit_cube_vertices, unit_square_vertices;	// host-side vertices
@@ -58,6 +65,8 @@ auto	spheres = std::move(create_sphere());
 auto	cubes = std::move(create_cube());
 auto	squares = std::move(create_squares());
 auto	obstacles = std::list<obstacle_t>();
+auto	buttons = std::move(create_buttons());
+auto	main_menu_button = std::move(create_square());
 //*************************************
 void update()
 {
@@ -83,6 +92,7 @@ void update()
 
 	// update common uniform variables in vertex/fragment shaders
 	GLint uloc;
+	glUseProgram(program);
 	uloc = glGetUniformLocation( program, "b_solid_color" );	if(uloc>-1) glUniform1i( uloc, b_solid_color );
 	//uloc = glGetUniformLocation( program, "aspect_matrix" );	if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, aspect_matrix );
 	//uloc = glGetUniformLocation(program, "view_projection_matrix");		if(uloc>-1) glUniformMatrix4fv(uloc, 1, GL_TRUE, view_projection_matrix);
@@ -94,7 +104,7 @@ void update()
 	if(b) update_tess(); 
 	void update_pos();
 	if (d) update_pos();
-	update_obstacles(obstacles, t);
+	if(b_rotating) update_obstacles(obstacles, t);
 }
 
 template <typename T>
@@ -104,7 +114,7 @@ void render_obj(T& obj, std::vector<uint>& indices, GLuint VAOid) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texID);
 
-		instance.update(t);
+		if(b_rotating) instance.update(t);
 		GLint uloc;
 		uloc = glGetUniformLocation(program, "solid_color");		if (uloc > -1) glUniform4fv(uloc, 1, instance.color);	// pointer version
 		uloc = glGetUniformLocation(program, "model_matrix");		if (uloc > -1) glUniformMatrix4fv(uloc, 1, GL_TRUE, instance.model_matrix);
@@ -117,10 +127,47 @@ void render_obj(T& obj, std::vector<uint>& indices, GLuint VAOid) {
 
 void render()
 {
-	if (!game_start) {
+	if (!game_start&&title) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(program);
+
 		render_obj(squares, unit_square_indices, 2);
+
+		// render texts
+		float dpi_scale = cg_get_dpi_scale();
+		render_text("Life in Sung-Kil-Kwan University", 100, 150, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("START", 467, 300, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("HOW TO", 459, 372, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("OPTION", 459, 444, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("EXIT", 473, 516, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		glfwSwapBuffers(window);
+	}
+	if (!game_start&&!title&&how_to) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(program);
+
+		render_obj(buttons, unit_square_indices, 2);
+	
+		float dpi_scale = cg_get_dpi_scale();
+		render_text("Back", 971, 37, 0.4f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("HOW TO", 400, 50, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("You are one of the students in SKKU(Sung-Kil-Kwan University).", 60, 100, 0.4f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("As game starts, the professor Lee starts to give you three kind of walls on random lane.", 60, 120, 0.4f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("To successfully finish your semester, you should do following instructions.", 60, 140, 0.4f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+
+		render_text("- Lecture Wall : Change your color to the same color as the lectures!", 10, 200, 0.5f, vec4(1.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
+		render_text("Press Z to change your color.", 40, 230, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Lectures' Color is Red, Green, Blue, White.", 40, 255, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Easy mode is two colors(RB), Medium is three(RGB),", 40, 280, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Hard mode is four colors(RGBW).", 40, 305, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+
+		render_text("- Assignment Wall : Just avoid the assignments!", 10, 350, 0.5f, vec4(1.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
+		render_text("Press <-, -> to move.", 40, 380, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Assignments' Color is Yellow.", 40, 405, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);  //펜 추가하기
+		
+		render_text("- Exam Wall : Throw the pen and break the exams!", 10, 450, 0.5f, vec4(1.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
+		render_text("Press X to throw your pen.", 40, 480, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Exams' Color is Black.", 40, 505, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
 
 		glfwSwapBuffers(window);
 	}
@@ -135,6 +182,42 @@ void render()
 		render_obj(cubes, unit_cube_indices, 2);
 		render_obj(obstacles, unit_cube_indices, 2);
 		
+		// swap front and back buffers, and display to screen
+		glfwSwapBuffers(window);
+	}
+	if (game_over) {
+		// clear screen (with background color) and clear depth buffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// notify GL that we use our own program
+		glUseProgram(program);
+
+		
+		render_obj(main_menu_button, unit_square_indices, 2);
+		
+		float dpi_scale = cg_get_dpi_scale();
+		render_text("GAME OVER", 300, 200, 2.0f, vec4(1.0f, 0.0f, 0.0f, 1.0f), dpi_scale);
+		render_text("Your Grade is F.", 400, 250, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale); 
+		render_text("You Should Do JaeSuGang. Go Back to Main Menu.", 100, 300, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Main Menu", 455, 390, 0.5f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		// swap front and back buffers, and display to screen
+		glfwSwapBuffers(window);
+	}
+	if (game_clear) {
+		// clear screen (with background color) and clear depth buffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// notify GL that we use our own program
+		glUseProgram(program);
+
+		main_menu_button[0].color = vec4(0.0f, 0.5f, 0.5f, 1.0f);
+		render_obj(main_menu_button, unit_square_indices, 2);
+
+		float dpi_scale = cg_get_dpi_scale();
+		render_text("GAME CLEAR", 280, 200, 2.0f, vec4(0.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
+		render_text("Your Grade is C+.", 390, 250, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Congratulations! You successfully finish your semester!", 20, 300, 0.7f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+		render_text("Main Menu", 455, 390, 0.5f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
 		// swap front and back buffers, and display to screen
 		glfwSwapBuffers(window);
 	}
@@ -210,10 +293,20 @@ void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods )
 		else if(key==GLFW_KEY_H||key==GLFW_KEY_F1)	print_help();
 		//else if(key==GLFW_KEY_KP_ADD||(key==GLFW_KEY_EQUAL&&(mods&GLFW_MOD_SHIFT)))	b.add = true;
 		else if (key == GLFW_KEY_Z) {
+			if (game_start) {
+				cam.init();
+				game_clear = true;
+				game_start = false;
+			}
 			b.add = true;
 			printf("> increasing speed\n");
 		}
 		else if (key == GLFW_KEY_X) {
+			if (game_start) {
+				cam.init();
+				game_over = true;
+				game_start = false;
+			}
 			b.sub = true;
 			printf("> decreasing speed\n");
 		}
@@ -358,15 +451,39 @@ void mouse( GLFWwindow* window, int button, int action, int mods )
 	if (action == GLFW_PRESS) {
 		tb.begin(cam.view_matrix, npos);
 		if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) {
-			if (pos.y > 330 && pos.y < 390 && pos.x>490 && pos.x < 790) {
-				if (!game_start) {
-					cam.update();
-					game_start = true;
+			if (title) {
+				if (pos.y > 330 && pos.y < 390 && pos.x>490 && pos.x < 790) {  //start button
+					if (!game_start) {
+						cam.update();
+						title = false;
+						game_start = true;
+
+					}
+					else printf("> rotating camera\n");
+
+					cam.view_matrix = mat4::look_at(cam.eye, cam.at, cam.up);
+
 				}
-				else printf("> rotating camera\n");
-
-				cam.view_matrix = mat4::look_at(cam.eye, cam.at, cam.up);
-
+				else if (pos.y > 420 && pos.y < 480 && pos.x>490 && pos.x < 790) {  //how to button
+					how_to = true;
+					title = false;
+				}
+				else if (pos.y > 600 && pos.y < 660 && pos.x>490 && pos.x < 790) {  //exit button
+					glfwSetWindowShouldClose(window, GL_TRUE);
+				}
+			}
+			else if (how_to) {
+				if (pos.y > 15 && pos.y < 75 && pos.x>1210 && pos.x < 1270) {
+					how_to = false;
+					title = true;
+				}
+			}
+			else if (game_over||game_clear){
+				if (pos.x > 520 && pos.x < 760 && pos.y>450 && pos.y < 490) {
+					if (game_over) game_over = false;
+					else if (game_clear) game_clear = false;
+					title = true;
+				}
 			}
 		}
 		else if (tb.button == GLFW_MOUSE_BUTTON_MIDDLE ||
@@ -393,7 +510,7 @@ void motion( GLFWwindow* window, double x, double y )
 		//	}
 		//	puts("");
 		//}
-		
+		printf("(%f, %f)\n", x, y);
 
 		if(game_start) cam.view_matrix = tb.update(npos);
 	}
@@ -445,9 +562,11 @@ bool user_init()
 	// init GL states
 	glLineWidth( 1.0f );
 	glClearColor( 39/255.0f, 40/255.0f, 34/255.0f, 1.0f );	// set clear color
+	glEnable(GL_BLEND);
 	glEnable( GL_CULL_FACE );								// turn on backface culling
 	glEnable( GL_DEPTH_TEST );								// turn on depth tests
 	glActiveTexture(GL_TEXTURE0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	unit_sphere_vertices = std::move(create_sphere_vertices());
 	unit_sphere_indices= create_sphere_indices( unit_sphere_vertices, vertex_array);
@@ -456,6 +575,7 @@ bool user_init()
 	unit_square_vertices = std::move(create_square_vertices());
 	unit_square_indices = create_square_indices(unit_square_vertices, vertex_array);
 	//printf("%d\n", texID);
+	if (!init_text()) return false;
 	texID = create_texture(image_path, true);
 	//printf("%d\n", texID);
 	return true;
