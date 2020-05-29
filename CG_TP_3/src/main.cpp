@@ -6,8 +6,8 @@
 #include "mesh_generator.h"
 #include "object.h"
 #include "constant.h"
-//#include "button.h"
 #define TT puts("TEST");
+
 //*******************************************************************
 // forward declarations for freetype text
 bool init_text();
@@ -18,7 +18,7 @@ void render_text(std::string text, GLint x, GLint y, GLfloat scale, vec4 color, 
 static const char* window_name = "Team Project";
 static const char* vert_shader_path = "../bin/shaders/circ.vert";
 static const char* frag_shader_path = "../bin/shaders/circ.frag";
-static const char* image_path = "../bin/images/slee_2.jpg";
+static const char* image_path = "../bin/images/slee_1.jpg";
 // initial tessellation factor of the circle as a polygon
 
 
@@ -70,7 +70,7 @@ bool   b_wireframe = false;
 struct { bool add = false, sub = false; operator bool() const { return add || sub; } } b; // flags of keys for smooth changes
 struct { bool up = false, down = false, right = false, left = false;  operator bool() const { return up || down || right || left; } } d; // flags of keys for smooth changes
 int      tc_color_flag = 0;
-bool   b_rotating = true;
+bool    executing = true;
 float   restart_time = 0.0f;
 float   actual_moved_time = 0.0f;
 int      rotating_type = 0;
@@ -97,13 +97,22 @@ public:
 physics_engine PEngine;
 
 //*************************************
+void restart() { //ÏàòÏ†ïÌïÑÏöî!
+    gs.user_life = 3;
+    gs.user_score = 0;
+    gs.game_stage = 1;
+    executing = true;
+}
+
+
+
 void update()
 {
     cam.aspect = window_size.x / float(window_size.y);
     cam.projection_matrix = mat4::perspective(cam.fovy, cam.aspect, cam.dnear, cam.dfar);
     // update global simulation parameter
     //
-    if(gs.game_start) t = float(glfwGetTime()) * 0.4f;
+    if(gs.game_start&&executing) t = float(glfwGetTime()) * 0.4f;
     // tricky aspect correction matrix for non-square window
     float aspect = window_size.x / float(window_size.y);
     mat4 aspect_matrix =
@@ -151,6 +160,7 @@ void update()
             cam.init();
             gs.game_over = true;
             gs.game_start = false;
+            executing = false;
         }
         for (size_t i = 0; i < Professor.size(); i++) Professor[i].update_to_random_lane(frame);
         for (auto k = Pen.begin(); k != Pen.end();) {
@@ -163,7 +173,7 @@ void update()
                 cam.init();
                 gs.game_over = true;
                 gs.game_start = false;
-       
+                executing = false;
                 k = Pen.erase(k);
             }
             else k++;
@@ -175,17 +185,17 @@ void update()
                 if (PEngine.collision_exists(*k, *p, 20.0f)) {
                     k = Pen.erase(k);
                     if (p->type == 2) {
-                        puts("good kill ¡°ºˆ + 1");
+                        puts("good kill Ï†êÏàò + 10");
                         p = Obstacles.erase(p);
                         temp = true;
 
-                        gs.user_score++;
+                        gs.user_score+=10;
 
                         break;
                     }
                     else {
-                        puts("wrong kill ¡°ºˆ -1");
-                        gs.user_score--;
+                        puts("wrong kill Ï†êÏàò -10");
+                        gs.user_score-=10;
                     }
                 }
                 else k++;
@@ -197,22 +207,22 @@ void update()
         for (auto p = Obstacles.begin(); p != Obstacles.end();) {
 
             if (PEngine.collision_exists(Student[0], *p)) {
-                if (p->type == 0) { // Ω√«Ë: ∏¬¥¬ ªˆ±Ú∑Œ
+                if (p->type == 0) { // ÏãúÌóò: ÎßûÎäî ÏÉâÍπîÎ°ú
                     if (p->subject_id == Student[0].subject_id) {
-                        puts("GREAT ¡°ºˆ +1");
-                        gs.user_score++;
+                        puts("GREAT Ï†êÏàò +10");
+                        gs.user_score+=10;
                     }
                     else {
-                        puts("FAIL life -1"); //∆≤∏∞ ªˆ±Ú∑Œ √Êµπ
-                        gs.user_life--;
+                        puts("FAIL life -10"); //ÌãÄÎ¶∞ ÏÉâÍπîÎ°ú Ï∂©Îèå
+                        gs.user_life-=10;
                     }
                 }
                 else if (p->type == 1) {
-                    puts("life -1"); // ∞˙¡¶ ∏¯«««‘
+                    puts("life -1"); // Í≥ºÏ†ú Î™ªÌîºÌï®
                     gs.user_life--;
                 }
                 else {
-                    puts("life -1"); //∞≠¿« ¡¶∞≈∏¯«ÿº≠ ∏¬¿Ω
+                    puts("life -1"); //Í∞ïÏùò Ï†úÍ±∞Î™ªÌï¥ÏÑú ÎßûÏùå
                     gs.user_life--;
                 }
                 p = Obstacles.erase(p);
@@ -220,11 +230,11 @@ void update()
             else {
                 if (p->position.x > 70.0f) {
                     if (p->type == 1) {
-                        puts("GREAT ¡°ºˆ +1"); // ∞˙¡¶ «««ÿº≠ «««— ∞˙¡¶∞° ≥°ø° µµ¥ﬁ
-                        gs.user_score++;
+                        puts("GREAT Ï†êÏàò +10"); // Í≥ºÏ†ú ÌîºÌï¥ÏÑú ÌîºÌïú Í≥ºÏ†úÍ∞Ä ÎÅùÏóê ÎèÑÎã¨
+                        gs.user_score+=10;
                     }
                     else {
-                        puts("life -1"); // ∞˙¡¶∞° æ∆¥—µ• ≥°ø° µµ¥ﬁ -> ∏¡«‘
+                        puts("life -1"); // Í≥ºÏ†úÍ∞Ä ÏïÑÎãåÎç∞ ÎÅùÏóê ÎèÑÎã¨ -> ÎßùÌï®
                         gs.user_life--;
                     }
                     p = Obstacles.erase(p);
@@ -304,7 +314,7 @@ void render()
 
         render_text("- Assignment Wall : Just avoid the assignments!", 10, 350, 0.5f, vec4(1.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
         render_text("Press <-, -> to move.", 40, 380, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
-        render_text("Assignments' Color is Yellow.", 40, 405, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);  //∆Ê √ﬂ∞°«œ±‚
+        render_text("Assignments' Color is Yellow.", 40, 405, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);  //Ìéú Ï∂îÍ∞ÄÌïòÍ∏∞
 
         render_text("- Exam Wall : Throw the pen and break the exams!", 10, 450, 0.5f, vec4(1.0f, 0.5f, 0.5f, 1.0f), dpi_scale);
         render_text("Press X to throw your pen.", 40, 480, 0.45f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
@@ -361,6 +371,18 @@ void render()
         render_obj(Professor, meshes[1]->indices, meshes[1]->VAO);
         render_obj(Obstacles, meshes[0]->indices, meshes[0]->VAO);
         render_obj(Pen, meshes[2]->indices, meshes[2]->VAO);
+        //render_obj(Face, meshes[0]->indices, meshes[0]->VAO);
+        
+        //glActiveTexture(GL_TEXTURE1);
+        //glBindTexture(GL_TEXTURE_2D, texID);
+        //glUniform1i(glGetUniformLocation(program, "tex"), 1);
+
+        //// bind vertex array object
+        //glBindVertexArray(vertex_array);
+
+        //// render quad vertices
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
         float dpi_scale = cg_get_dpi_scale();
         render_text("Life  : ", 20, 50, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
@@ -368,6 +390,13 @@ void render()
 
         render_text("Stage : ", 20, 100, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
         render_text(std::to_string(gs.game_stage), 210, 100, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+
+        render_text("Level : ", 20, 150, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
+        char* level;
+        if (gs.game_level == 0) level = "EASY";
+        else if (gs.game_level == 1) level = "NORMAL";
+        else level = "HARD";
+        render_text(level, 210, 150, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
 
         render_text("Score : ", 700, 50, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
         render_text(std::to_string(gs.user_score), 900, 50, 1.0f, vec4(1.0f, 1.0f, 1.0f, 1.0f), dpi_scale);
@@ -543,16 +572,15 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
             printf("> using %s mode\n", b_wireframe ? "wireframe" : "solid");
         }
        
-        else if (key == GLFW_KEY_R)
+        else if (key == GLFW_KEY_P)
         {
-            b_rotating = !b_rotating;
-            if (!b_rotating) {
+            executing = !executing;
+            if (!executing) {
                 printf("> stopped\n");
-                //t = float(glfwGetTime()) * 0.4f;
                 actual_moved_time += t - restart_time;
             }
             else {
-                printf("> rotating\n");
+                printf("> continue\n");
                 restart_time = t;
             }
         }
@@ -631,19 +659,7 @@ void mouse(GLFWwindow* window, int button, int action, int mods)
         tb.begin(cam.view_matrix, npos);
         if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) {
             if (gs.title) {
-                if (pos.y > 330 && pos.y < 390 && pos.x>490 && pos.x < 790) {  //start button
-                    if (!gs.game_start) {
-                        cam.update();
-                        gs.title = false;
-                        gs.game_start = true;
-
-                    }
-                    else printf("> rotating camera\n");
-
-                    cam.view_matrix = mat4::look_at(cam.eye, cam.at, cam.up);
-
-                }
-                else if (pos.y > 420 && pos.y < 480 && pos.x>490 && pos.x < 790) {  //how to button
+                if (pos.y > 420 && pos.y < 480 && pos.x>490 && pos.x < 790) {  //how to button
                     gs.how_to = true;
                     gs.title = false;
                 }
@@ -672,13 +688,18 @@ void mouse(GLFWwindow* window, int button, int action, int mods)
                     else if (pos.x > 970 && pos.x < 1150) gs.game_level = 2;
                 }
             }
-            else if (gs.game_over || gs.game_clear||gs.hid_game_clear) {
+            else if (gs.game_over || gs.game_clear || gs.hid_game_clear) {
                 if (pos.x > 520 && pos.x < 760 && pos.y>450 && pos.y < 510) {
                     if (gs.game_over) gs.game_over = false;
                     else if (gs.game_clear) gs.game_clear = false;
                     else if (gs.hid_game_clear) gs.hid_game_clear = false;
                     gs.title = true;
+
                 }
+            }
+            else if (gs.game_start) {
+                printf("> rotating camera\n");
+                cam.view_matrix = mat4::look_at(cam.eye, cam.at, cam.up);
             }
         }
         else if (tb.button == GLFW_MOUSE_BUTTON_MIDDLE ||
@@ -689,6 +710,19 @@ void mouse(GLFWwindow* window, int button, int action, int mods)
     else if (action == GLFW_RELEASE) {
         tb.end();
         printf("> fininshed\n");
+        if (tb.button == GLFW_MOUSE_BUTTON_LEFT && tb.mods == 0) {
+            if (gs.title) {
+                if (pos.y > 330 && pos.y < 390 && pos.x>490 && pos.x < 790) {  //start button
+                    if (!gs.game_start) {
+                        cam.update();
+                        restart();
+                        gs.title = false;
+                        gs.game_start = true;
+                        
+                    }
+                }
+            }
+        }
     }
 
 }
@@ -762,9 +796,28 @@ bool user_init()
     Professor = create_professor();
     Title_buttons = create_title_buttons();
     Tmp_walls = create_tmp_walls();
-   // Title_buttons = create_title_buttons();
     Main_menu_button = create_main_menu_buttons();
     Option_buttons = create_option_buttons();
+    //Face = create_face();
+
+    vertex corners[4];
+    corners[0].pos = vec3(-1.0f, -1.0f, 0.0f);	corners[0].tex = vec2(0.0f, 0.0f);
+    corners[1].pos = vec3(+1.0f, -1.0f, 0.0f);	corners[1].tex = vec2(1.0f, 0.0f);
+    corners[2].pos = vec3(+1.0f, +1.0f, 0.0f);	corners[2].tex = vec2(1.0f, 1.0f);
+    corners[3].pos = vec3(-1.0f, +1.0f, 0.0f);	corners[3].tex = vec2(0.0f, 1.0f);
+    vertex vertices[6] = { corners[0], corners[1], corners[2], corners[0], corners[2], corners[3] };
+
+    // generation of vertex buffer is the same, but use vertices instead of corners
+    GLuint vertex_buffer;
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // generate vertex array object, which is mandatory for OpenGL 3.3 and higher
+    if (vertex_array) glDeleteVertexArrays(1, &vertex_array);
+    vertex_array = cg_create_vertex_array(vertex_buffer);
+    if (!vertex_array) { printf("%s(): failed to create vertex aray\n", __func__); return false; }
+    texID = create_texture(image_path, true);
     if (!init_text()) return false;
     return true;
 }
@@ -792,13 +845,22 @@ int main(int argc, char* argv[])
 
 
     // enters rendering/event loop
-    for (frame = 0; !glfwWindowShouldClose(window); frame++)
-    {
+    frame = 0;
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();   // polling and processing of events
         update();         // per-frame update
-        render();         // per-frame render
-
+        if (executing||!gs.game_start) {
+            render();         // per-frame render
+            frame++;
+        }
     }
+    //for (frame = 0; !glfwWindowShouldClose(window); frame++)
+    //{
+    //    glfwPollEvents();   // polling and processing of events
+    //    update();         // per-frame update
+    //    render();         // per-frame render
+
+    //}
 
     // normal termination
     user_finalize();
