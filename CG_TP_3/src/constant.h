@@ -10,8 +10,8 @@ struct game_state {
 
 	unsigned int game_mode = 0;
 	unsigned int user_count = 1;
-	unsigned int user_life = 3;
-	unsigned int user_score = 100;
+	int user_life = 3;
+	unsigned int user_score = 0;
 	unsigned int game_level = 0;
 	unsigned int game_stage = 1;
 };
