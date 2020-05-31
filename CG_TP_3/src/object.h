@@ -148,9 +148,16 @@ inline std::vector<object_t> create_tmp_walls()
 	c.color = vec3(0, 0.5f, 0.5f);
 	ret.push_back(c);
 
-	vec3 _pos[] = { vec3(0.0f, 7.0f, 1.0f), vec3(0.0f, 10.0f, 1.0f),vec3(0.0f, 13.0f, 1.0f),vec3(0.0f, 16.0f, 1.0f),vec3(0.0f, 7.0f, -4.0f),vec3(0.0f, 7.0f, -9.0f) };
-	vec3 _color[] = { vec3(1.0f,0.0f,0.0f),vec3(0.0f,0.0f,1.0f),vec3(0.0f,1.0f,0.0f),vec3(1.0f,1.0f,1.0f),vec3(1.0f,1.0f,0.0f),vec3(0.0f,0.0f,0.0f) };
-	for (size_t i = 0; i < 6; i++) {
+	c.position = vec3(0, 20.0f, -10.7f);
+	c.size = vec3(0.1f, 1.0f, 0.7f);
+	c.moving_level = 0;
+	c.rotating_level = 0;
+	c.color = vec3(0, 0.5f, 0.5f);
+	ret.push_back(c);
+
+	vec3 _pos[] = { vec3(0.0f, 7.3f, 1.0f), vec3(0.0f, 10.3f, 1.0f),vec3(0.0f, 13.3f, 1.0f),vec3(0.0f, 16.3f, 1.0f),vec3(0.0f, 19.3f, 1.0f),vec3(0.0f, 7.3f, -4.0f),vec3(0.0f, 7.3f, -9.0f) };
+	vec3 _color[] = { vec3(1.0f,0.0f,0.0f),vec3(0.0f,0.0f,1.0f),vec3(0.0f,1.0f,0.0f),vec3(0.7f, 0.2f, 0.3f),vec3(0.1f, 0.4f, 0.6f),vec3(1.0f,1.0f,0.0f),vec3(1.0f,1.0f,1.0f) };
+	for (size_t i = 0; i < 7; i++) {
 		object_t c;
 		float	diff = 0.05f;
 		c.position = _pos[i]; c.size = vec3(0.1f, 1.0f, 1.5f); c.color = _color[i]; c.moving_level = 0; c.rotating_level = 0; ret.push_back(c);
@@ -158,6 +165,28 @@ inline std::vector<object_t> create_tmp_walls()
 			c.position.z = _pos[i].z - diff; c.position.y = _pos[i].y - diff * 3 / 2; c.color = _color[i]; ret.push_back(c);
 		}
 	}
+
+	return ret;
+}
+
+inline std::vector<object_t> create_how_to_buttons()
+{
+	std::vector<object_t> ret;
+	object_t c;
+
+	c.position = vec3(0, 20.0f, 10.7f);
+	c.size = vec3(0.1f, 1.0f, 0.7f);
+	c.moving_level = 0;
+	c.rotating_level = 0;
+	c.color = vec3(0, 0.5f, 0.5f);
+	ret.push_back(c);
+
+	c.position = vec3(0, -20.0f, -10.7f);
+	c.size = vec3(0.1f, 1.0f, 0.7f);
+	c.moving_level = 0;
+	c.rotating_level = 0;
+	c.color = vec3(0, 0.5f, 0.5f);
+	ret.push_back(c);
 
 	return ret;
 }
@@ -255,7 +284,7 @@ void update_obstacles(std::list<obstacle_t>& obstacle_list, unsigned int lane, i
 	}
 	if ((frame_count) % (2400 / stage) == 0) {
 		obstacle_t o;
-		//type 0: Ω√«Ë, type 1:∞˙¡¶, type 2: ∞≠¿«
+		//type 0: ÏãúÌóò, type 1:Í≥ºÏ†ú, type 2: Í∞ïÏùò
 		o.type = rand() % 3;
 		o.subject_id = rand() % subject_count;
 		if (o.type == 0) o.color = subject_color[o.subject_id];
