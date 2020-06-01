@@ -1,18 +1,26 @@
-#version 330
+#ifdef GL_ES
+#ifndef GL_FRAGMENT_PRECISION_HIGH	// highp may not be defined
+#define highp mediump
+#endif
+precision highp float; // default precision needs to be defined
+#endif
 
-// inputs from vertex shader
+// input from vertex shader
+in vec2 tc;
 in vec4 epos;
-in vec2 tc;	// used for texture coordinate visualization
 in vec3 norm;
-// output of the fragment shader
+
+// the only output variable
 out vec4 fragColor;
 
-// shader's global variables, called the uniform variables
-uniform bool b_solid_color;
-uniform vec4 solid_color;
+// texture sampler
 uniform int tc_color_flag;
 uniform bool game_start;
-uniform sampler2D tex;
+uniform sampler2D	TEX;
+uniform vec4		p_color;
+uniform bool		particle;
+
+uniform vec4		solid_color;
 
 //shading
 uniform mat4	view_matrix;
@@ -28,12 +36,9 @@ vec4 phong(vec3 l, vec3 n, vec3 h, vec4 Kd)
 	return Ira + Ird + Irs;
 }
 
+
 void main()
 {
-	//fragColor = b_solid_color ? solid_color : vec4(tc.xy,0,1);
-	//fragColor = vec4(normalize(norm), 1.0);
-	//fragColor = vec4(tc.xy, 0, 1);
-
 
 	vec4 lpos = view_matrix * light_position;
 
@@ -43,24 +48,32 @@ void main()
 	vec3 v = normalize(-p);		// eye-epos = vec3(0)-epos
 	vec3 h = normalize(l + v);	// the halfway vector
 
-	if (game_start) {
-		switch (tc_color_flag) {
-		case 0:
-			//fragColor = texture(tex, tc);
-			fragColor = phong(l, n, h, solid_color);
-			break;
-		case 1:
-			fragColor = phong(l, n, h, solid_color);
-			break;
-		case 2:
-			fragColor = vec4(tc.xxx, 1);
-			break;
-		case 3:
-			fragColor = vec4(tc.yyy, 1);
-			break;
-		}
+	if (particle)
+	{
+		fragColor = texture(TEX, tc);// if(fragColor.a < 0.001) discard;
+		fragColor = vec4(fragColor.rgb, fragColor.r) * p_color; // enable alpha blending
 	}
 	else {
-		fragColor = solid_color;
+		if (game_start) {
+			switch (tc_color_flag) {
+			case 0:
+				//fragColor = texture(tex, tc);
+				fragColor = phong(l, n, h, solid_color);
+				break;
+			case 1:
+				fragColor = phong(l, n, h, solid_color);
+				break;
+			case 2:
+				fragColor = vec4(tc.xxx, 1);
+				break;
+			case 3:
+				fragColor = vec4(tc.yyy, 1);
+				break;
+			}
+		}
+		else {
+			fragColor = solid_color;
+		}
 	}
 }
+
